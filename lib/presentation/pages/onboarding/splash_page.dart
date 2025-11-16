@@ -1,9 +1,7 @@
-// lib/presentation/pages/splash_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart'; // Pastikan path ini benar
+import '../../../core/constants/app_colors.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -13,116 +11,106 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-  // State untuk mengontrol animasi fade-in
   double _logoOpacity = 0.0;
   double _loadingOpacity = 0.0;
+  static const int _splashDurationMs = 2500;
 
   @override
   void initState() {
     super.initState();
-
-    // 1. Memicu animasi fade-in
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        // Logo muncul lebih dulu
-        setState(() {
-          _logoOpacity = 1.0;
-        });
-        // Loading muncul 0.5 detik setelah logo
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            setState(() {
-              _loadingOpacity = 1.0;
-            });
-          }
-        });
-      }
+      _startAnimations();
+      _navigateAfterDelay();
     });
-
-    // 2. Menjalankan logika navigasi
-    _checkUserStatus();
   }
 
-  void _checkUserStatus() async {
-    // Memberi waktu 2 detik untuk branding (total durasi)
-    // Anda bisa sesuaikan ini, misal jadi 2500ms agar pas dengan animasi
-    await Future.delayed(const Duration(milliseconds: 2500));
+  void _startAnimations() {
+    if (!mounted) return;
+    setState(() => _logoOpacity = 1.0);
 
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) setState(() => _loadingOpacity = 1.0);
+    });
+  }
+
+  void _navigateAfterDelay() async {
+    await Future.delayed(const Duration(milliseconds: _splashDurationMs));
+    _checkUserStatusAndNavigate();
+  }
+
+  void _checkUserStatusAndNavigate() async {
     final prefs = await SharedPreferences.getInstance();
-    final bool isOnboardingCompleted =
-        prefs.getBool('onboarding_completed') ?? false;
+    if (!mounted) return;
+
     final String? authToken = prefs.getString('auth_token');
 
-    if (!mounted) return; // Pastikan widget masih ada sebelum navigasi
-
-    // 1. Jika ada Token Login -> Dashboard (Auto-Login)
     if (authToken != null) {
-      // Pastikan Anda punya rute '/dashboard' di router Anda
-      context.go('/dashboard');
+      final bool isProfileComplete = prefs.getBool('profile_complete') ?? false;
 
-      // 2. Jika TIDAK ADA Token Login
-      //    A. Jika Onboarding BELUM PERNAH selesai -> Onboarding Page
-    } else if (!isOnboardingCompleted) {
-      context.go('/onboarding');
-
-      //    B. Jika Onboarding SUDAH PERNAH selesai -> Choice Page (Login/Register)
+      if (isProfileComplete) {
+        context.go('/dashboard');
+      } else {
+        context.go('/profile-setup');
+      }
     } else {
-      context.go('/choice');
+      context.go('/onboarding');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Menggunakan warna background utama aplikasi
       backgroundColor: AppColors.creamyWhite,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // --- Logo Anda (dengan animasi fade-in) ---
-            AnimatedOpacity(
-              opacity: _logoOpacity,
-              duration: const Duration(
-                milliseconds: 1500,
-              ), // Durasi fade-in logo
-              curve: Curves.easeIn,
-              child: Image.asset(
-                'assets/images/logo manpro.png', // Pastikan path logo ini benar
-                height: 250, // Ukuran disesuaikan agar lebih proporsional
-                width: 250,
-              ),
-            ),
-            const SizedBox(height: 50),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final double width = constraints.maxWidth;
+          final double height = constraints.maxHeight;
 
-            // --- Indikator Loading (dengan animasi fade-in) ---
-            AnimatedOpacity(
-              opacity: _loadingOpacity,
-              duration: const Duration(
-                milliseconds: 500,
-              ), // Durasi fade-in loading
-              curve: Curves.easeIn,
-              child: Column(
-                children: [
-                  const CircularProgressIndicator(
-                    // Menggunakan warna tema aplikasi
-                    color: AppColors.deepBrown,
-                    strokeWidth: 3.0,
+          final double logoSize = (width * 0.65).clamp(180.0, 300.0);
+          final double mainGap = (height * 0.06).clamp(30.0, 60.0);
+          final double subGap = (height * 0.02).clamp(10.0, 20.0);
+          final double loadingFontSize = (width * 0.038).clamp(12.0, 16.0);
+
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedOpacity(
+                  opacity: _logoOpacity,
+                  duration: const Duration(milliseconds: 1500),
+                  curve: Curves.easeIn,
+                  child: Image.asset(
+                    'assets/images/logo manpro.png',
+                    height: logoSize,
+                    width: logoSize,
                   ),
-                  const SizedBox(height: 15),
-                  Text(
-                    'Loading...',
-                    style: TextStyle(
-                      fontSize: 14,
-                      // Menggunakan warna tema aplikasi (sedikit pudar)
-                      color: AppColors.deepBrown.withAlpha(150),
-                    ),
+                ),
+                SizedBox(height: mainGap),
+                AnimatedOpacity(
+                  opacity: _loadingOpacity,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeIn,
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(
+                        color: AppColors.deepBrown,
+                        strokeWidth: 3.0,
+                      ),
+                      SizedBox(height: subGap),
+                      Text(
+                        'Loading...',
+                        style: TextStyle(
+                          fontSize: loadingFontSize,
+                          color: AppColors.deepBrown.withAlpha(150),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

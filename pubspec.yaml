@@ -46,6 +46,8 @@ dependencies:
   # Note: Untuk geofencing yang lebih kompleks, kita mungkin butuh plugin native yang spesifik,
   # tetapi kita akan mulai dengan background service untuk dasar pelacakan.
 
+  google_nav_bar: ^5.0.6
+  
   # State Management (Cubit/BLoC)
   flutter_bloc: ^8.1.3
 

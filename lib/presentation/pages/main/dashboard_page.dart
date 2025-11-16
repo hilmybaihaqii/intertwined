@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
+import '../../../core/constants/app_colors.dart';
+
+// Pastikan semua file ini ada di folder 'main'
 import 'home_page.dart';
 import 'search_page.dart';
 import 'scroll_page.dart';
-import 'news_page.dart.dart';
+import 'news_page.dart.dart'; // Error Anda ada di sini. Pastikan path-nya benar.
 import 'profile_page.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -32,42 +36,56 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.creamyWhite,
       appBar: AppBar(
-        title: const Text('Find Friends App'),
+        title: const Text(
+          'Intertwined',
+          style: TextStyle(
+            color: AppColors.deepBrown,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppColors.creamyWhite,
+        elevation: 0,
       ),
-      
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
-      
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+      body: Center(child: _widgetOptions.elementAt(_selectedIndex)),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppColors.creamyWhite,
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 20,
+              // FIX: Mengganti withOpacity(.1) dengan withAlpha(26)
+              color: Colors.black.withAlpha(26),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 15.0,
+              vertical: 8.0,
+            ),
+            child: GNav(
+              gap: 8,
+              activeColor: AppColors.creamyWhite,
+              iconSize: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              duration: const Duration(milliseconds: 400),
+              tabBackgroundColor: AppColors.deepBrown,
+              color: AppColors.deepBrown.withAlpha(150),
+              tabs: const [
+                GButton(icon: Icons.home_outlined, text: 'Home'),
+                GButton(icon: Icons.search_outlined, text: 'Search'),
+                GButton(icon: Icons.explore_outlined, text: 'Scroll'),
+                GButton(icon: Icons.article_outlined, text: 'News'),
+                GButton(icon: Icons.person_outline, text: 'Account'),
+              ],
+              selectedIndex: _selectedIndex,
+              onTabChange: _onItemTapped,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore),
-            label: 'Scroll',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article),
-            label: 'News',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Account',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: _onItemTapped,
+        ),
       ),
     );
   }

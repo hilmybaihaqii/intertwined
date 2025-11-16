@@ -1,109 +1,119 @@
-// lib/presentation/pages/main/profile_page.dart (KODE DIPERBAIKI)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../bloc/auth/auth_cubit.dart';
 import '../../bloc/profile/profile_cubit.dart';
 import '../../bloc/profile/profile_state.dart';
+import '../../../core/constants/app_colors.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
-  void _logout(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // 1. Hapus token otentikasi (WAJIB)
-    await prefs.remove('auth_token');
-
-    // 2. Hapus flag onboarding (agar melihat intro lagi)
-    await prefs.remove('onboarding_completed');
-
-    // 3. JANGAN HAPUS: 'profile_completed' harus tetap TRUE agar Login berikutnya langsung ke Dashboard
-    await prefs.remove('profile_completed');
-
+  void _logout(BuildContext context) {
+    context.read<AuthCubit>().logout();
     if (context.mounted) {
-      // Arahkan ke rute awal (Splash Page, yang akan menavigasi ke Onboarding)
-      context.go('/onboarding');
+      context.go('/');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil Saya'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
-            tooltip: 'Logout',
-          ),
-        ],
-      ),
-      body: BlocBuilder<ProfileCubit, ProfileState>(
+    // --- Scaffold & AppBar DIHAPUS ---
+    // Widget terluar sekarang adalah Container atau BlocBuilder
+    return Container(
+      color: AppColors.creamyWhite, // Beri background agar konsisten
+      child: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.deepBrown),
+            );
           }
 
           final data = state.profileData;
           final name = data['name'] ?? 'Nama Belum Diisi';
           final nickname = data['nickname'] ?? 'N/A';
+          final birthdate = data['birthdate'] ?? 'Belum ada data';
+          final personality = data['personality'] ?? 'Belum ada data';
+          final major = data['major'] ?? 'N/A';
+          final faculty = data['faculty'] ?? 'N/A';
+          final bloodType = data['blood_type'] ?? 'Belum ada data';
+          final funActivity = data['fun_activity'] ?? 'Belum ada data';
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                const CircleAvatar(
-                  radius: 60,
-                  child: Icon(Icons.person, size: 60),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                // Tambahkan tombol Logout di sini jika perlu,
+                // karena AppBar-nya sudah hilang
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.logout, color: AppColors.deepBrown),
+                    onPressed: () => _logout(context),
+                    tooltip: 'Logout',
                   ),
                 ),
+                const SizedBox(height: 8),
+
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: AppColors.deepBrown.withAlpha(50),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    size: 60,
+                    color: AppColors.deepBrown,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.deepBrown,
+                  ),
+                ),
+                const SizedBox(height: 4),
                 Text(
                   '@$nickname',
-                  style: const TextStyle(fontSize: 18, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 17,
+                    color: AppColors.deepBrown.withAlpha(150),
+                  ),
                 ),
-                const Divider(height: 40),
-
+                const Divider(height: 40, color: Color(0xFFE0E0E0)),
                 _buildProfileDetail(
-                  context,
-                  Icons.cake,
+                  Icons.cake_outlined,
                   'Tanggal Lahir',
-                  data['birthdate'] ?? 'Belum ada data',
+                  birthdate,
                 ),
                 _buildProfileDetail(
-                  context,
-                  Icons.badge,
+                  Icons.badge_outlined,
                   'Tipe Kepribadian',
-                  data['personality'] ?? 'Belum ada data',
+                  personality,
                 ),
                 _buildProfileDetail(
-                  context,
-                  Icons.school,
+                  Icons.school_outlined,
                   'Major & Fakultas',
-                  '${data['major'] ?? 'N/A'} - ${data['faculty'] ?? 'N/A'}',
+                  '$major - $faculty',
                 ),
                 _buildProfileDetail(
-                  context,
-                  Icons.favorite,
+                  Icons.water_drop_outlined,
                   'Golongan Darah',
-                  data['blood_type'] ?? 'Belum ada data',
+                  bloodType,
                 ),
                 _buildProfileDetail(
-                  context,
-                  Icons.sports_soccer,
+                  Icons.sports_soccer_outlined,
                   'Hobi/Aktivitas Fun',
-                  data['fun_activity'] ?? 'Belum ada data',
+                  funActivity,
                 ),
+                const SizedBox(height: 20), // Padding ekstra di bawah
               ],
             ),
           );
@@ -112,16 +122,28 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileDetail(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.blue),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(subtitle),
+  Widget _buildProfileDetail(IconData icon, String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: ListTile(
+        leading: Icon(icon, color: AppColors.deepBrown, size: 28),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: AppColors.deepBrown.withAlpha(200),
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(
+            color: AppColors.deepBrown,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 }

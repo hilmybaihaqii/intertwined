@@ -1,5 +1,3 @@
-// lib/core/constants/app_colors.dart
-
 import 'package:flutter/material.dart';
 
 class AppColors {
@@ -14,5 +12,14 @@ class AppColors {
   static const Color deepBrown = Color(0xFF5D4037); // Text & Aksen Gelap
 
   // Secondary Accent
-  static const Color sageGreen = Color(0xFFB5C9A9); // Secondary Accent (Menggunakan #A3BC49 dari gambar)
+  static const Color sageGreen = Color(0xFFB5C9A9); // Secondary Accent
+
+  // Neutral / Background
+  static const Color lightGrey = Color(
+    0xFFF2F2F2,
+  ); 
+  
+  static const Color vibrantTerracotta = Color(0xFFCB7766);
+  
+  static const Color vibrantYellow = Color(0xFFE8C434);
 }

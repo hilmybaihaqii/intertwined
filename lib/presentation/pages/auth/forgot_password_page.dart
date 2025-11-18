@@ -2,7 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart'; // Pastikan path ini benar
+
+// Import Konstanta
+import '../../../core/constants/app_colors.dart';
+
+// Import widget
+import '../../widgets/auth/auth_background.dart';
+import '../../widgets/auth/forgot_password_form_content.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -12,6 +18,7 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  // --- State dan Logic tetap di sini ---
   final TextEditingController _emailController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -28,6 +35,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     FocusScope.of(context).unfocus();
 
+    // Simulasi pengiriman
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Link reset password terkirim ke email Anda (Simulasi)'),
@@ -35,116 +43,54 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ),
     );
 
+    // Kode ini aman dari 'use_build_context_synchronously'
+    // karena tidak ada 'await' sebelumnya.
     context.pop();
   }
 
+  // --- build() Method (Struktur sama persis dengan Login) ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.creamyWhite,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final double width = constraints.maxWidth;
-            final double height = constraints.maxHeight;
+      body: Stack(
+        children: [
+          // 1. Widget Latar Belakang (Reusable)
+          const AuthBackground(),
 
-            const double baseWidth = 375.0;
-            final double scale = (width / baseWidth).clamp(0.9, 1.2);
+          // 2. Widget Konten Form
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, safeConstraints) {
+                final double viewportHeight = safeConstraints.maxHeight;
+                final double screenWidth = safeConstraints.maxWidth;
 
-            final double fontSizeTitle = 32 * scale;
-            final double fontSizeSubtitle = 16 * scale;
-            final double fontSizeButton = 18 * scale;
-            final double btnHeight = 55 * scale;
-            final double hPadding = 24.0 * (scale > 1.1 ? 1 : scale);
+                const double baseWidth = 375.0;
+                final double scaleFactor = (screenWidth / baseWidth).clamp(
+                  0.85,
+                  1.15,
+                );
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: hPadding,
-                vertical: height * 0.05,
-              ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: height * 0.05),
-                    Text(
-                      'Lupa Password?',
-                      style: TextStyle(
-                        fontSize: fontSizeTitle,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.deepBrown,
+                return SingleChildScrollView(
+                  child: Container(
+                    constraints: BoxConstraints(minHeight: viewportHeight),
+                    padding: EdgeInsets.symmetric(horizontal: 24 * scaleFactor),
+                    child: Center(
+                      // Konten di-center secara vertikal
+                      child: ForgotPasswordFormContent(
+                        scaleFactor: scaleFactor,
+                        screenHeight: viewportHeight,
+                        formKey: _formKey,
+                        emailController: _emailController,
+                        onSendLink: _performPasswordReset,
                       ),
                     ),
-                    SizedBox(height: height * 0.01),
-                    Text(
-                      'Masukkan email Anda untuk menerima link reset password.',
-                      style: TextStyle(
-                        fontSize: fontSizeSubtitle,
-                        color: AppColors.deepBrown.withAlpha(200),
-                      ),
-                    ),
-                    SizedBox(height: height * 0.06),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Alamat Email',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null ||
-                            value.isEmpty ||
-                            !value.contains('@')) {
-                          return 'Masukkan email yang valid.';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: height * 0.04),
-                    ElevatedButton(
-                      onPressed: _performPasswordReset,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, btnHeight),
-                        backgroundColor: AppColors.deepBrown,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 3,
-                      ),
-                      child: Text(
-                        'Kirim Link Reset',
-                        style: TextStyle(
-                          fontSize: fontSizeButton,
-                          color: AppColors.creamyWhite,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: height * 0.02),
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton(
-                        onPressed: () => context.pop(),
-                        child: Text(
-                          'Batal',
-                          style: TextStyle(
-                            color: AppColors.deepBrown.withAlpha(150),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16 * scale,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-// Import BLoC, State, dan Konstanta
 import '../../bloc/auth/auth_cubit.dart';
 import '../../bloc/auth/auth_state.dart';
 import '../../../core/constants/app_colors.dart';
 
-// Import widget yang baru kita buat dan yang sudah ada
 import '../../widgets/auth/auth_background.dart';
 import '../../widgets/auth/register_form_content.dart';
 
@@ -21,7 +19,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // --- State dan Logic tetap di sini ---
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -38,12 +35,13 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _performRegister() {
-    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+
     if (_formKey.currentState!.validate()) {
       context.read<AuthCubit>().register(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-          );
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
     }
   }
 
@@ -53,88 +51,162 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
-  void _handleAuthStatus(BuildContext context, AuthState state) {
-    FocusScope.of(context).unfocus();
-
+  // --- FUNGSI AUTH STATUS DENGAN FIX LINTER ---
+  Future<void> _handleAuthStatus(BuildContext context, AuthState state) async {
     if (state is AuthSuccess) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Pendaftaran Berhasil! Silakan masuk dengan akun baru Anda.',
-          ),
-          backgroundColor: Colors.green,
-        ),
+      _showCustomSnackBar(
+        context,
+        'Registration Successful! Please log in.',
+        isError: false,
       );
-      
-      // Perbaikan 'use_build_context_synchronously'
-      if (!mounted) return;
+
+      // Tunggu 2 detik
+      await Future.delayed(const Duration(seconds: 2));
+
+      // FIX: Cek context.mounted (milik parameter) bukan mounted (milik state)
+      if (!context.mounted) return;
+
       context.go('/login');
-      
     } else if (state is AuthFailure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Pendaftaran Gagal: ${state.message}'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _showCustomSnackBar(context, state.message, isError: true);
     }
   }
 
-  // --- build() Method (Struktur sama persis dengan Login) ---
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.creamyWhite,
-      body: BlocListener<AuthCubit, AuthState>(
-        listener: _handleAuthStatus,
-        child: Stack(
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
           children: [
-            // 1. Widget Latar Belakang (Reusable)
-            const AuthBackground(),
-
-            // 2. Widget Konten Form (Direvisi untuk centering)
-            SafeArea(
-              child: LayoutBuilder(
-                builder: (context, safeConstraints) {
-                  final double viewportHeight = safeConstraints.maxHeight;
-                  final double screenWidth = safeConstraints.maxWidth;
-
-                  const double baseWidth = 375.0;
-                  final double scaleFactor = (screenWidth / baseWidth).clamp(0.85, 1.15);
-
-                  return SingleChildScrollView(
-                    child: Container(
-                      constraints: BoxConstraints(
-                        minHeight: viewportHeight,
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: 24 * scaleFactor),
-                      child: Center(
-                        child: BlocBuilder<AuthCubit, AuthState>(
-                          builder: (context, state) {
-                            // Render widget konten yang baru
-                            return RegisterFormContent(
-                              scaleFactor: scaleFactor,
-                              screenHeight: viewportHeight,
-                              formKey: _formKey,
-                              emailController: _emailController,
-                              passwordController: _passwordController,
-                              confirmPasswordController: _confirmPasswordController,
-                              isLoading: state is AuthLoading,
-                              isPasswordHidden: _isPasswordHidden,
-                              onRegister: _performRegister,
-                              onTogglePasswordVisibility:
-                                  _togglePasswordVisibility,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ],
+        ),
+        backgroundColor: isError
+            ? Colors.redAccent.withValues(alpha: 0.9)
+            : Colors.green.withValues(alpha: 0.9),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.creamyWhite,
+        resizeToAvoidBottomInset: true,
+        body: BlocListener<AuthCubit, AuthState>(
+          listener: _handleAuthStatus,
+          child: Stack(
+            children: [
+              const AuthBackground(),
+
+              SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double screenHeight = constraints.maxHeight;
+                    final double screenWidth = constraints.maxWidth;
+
+                    const double baseWidth = 375.0;
+                    final double scaleFactor = (screenWidth / baseWidth).clamp(
+                      0.85,
+                      1.15,
+                    );
+
+                    return SizedBox(
+                      height: screenHeight,
+                      width: screenWidth,
+                      child: Center(
+                        child: SingleChildScrollView(
+                          physics: const ClampingScrollPhysics(),
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(context).viewInsets.bottom,
+                          ),
+                          child: RegisterFormContent(
+                            scaleFactor: scaleFactor,
+                            screenHeight: screenHeight,
+                            formKey: _formKey,
+                            emailController: _emailController,
+                            passwordController: _passwordController,
+                            confirmPasswordController:
+                                _confirmPasswordController,
+                            isLoading: false,
+                            isPasswordHidden: _isPasswordHidden,
+                            onRegister: _performRegister,
+                            onTogglePasswordVisibility:
+                                _togglePasswordVisibility,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Loading Overlay
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  if (state is AuthLoading) {
+                    return Container(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(
+                                color: AppColors.deepBrown,
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                "Creating Account...",
+                                style: TextStyle(
+                                  color: AppColors.deepBrown,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

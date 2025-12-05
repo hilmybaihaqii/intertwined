@@ -3,10 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-// Import Konstanta
 import '../../../core/constants/app_colors.dart';
 
-// Import widget
 import '../../widgets/auth/auth_background.dart';
 import '../../widgets/auth/forgot_password_form_content.dart';
 
@@ -18,9 +16,10 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  // --- State dan Logic tetap di sini ---
   final TextEditingController _emailController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,69 +27,115 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  void _performPasswordReset() {
+  Future<void> _performPasswordReset() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    setState(() {
+      _isLoading = true;
+    });
+    await Future.delayed(const Duration(seconds: 2));
 
-    FocusScope.of(context).unfocus();
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+    });
 
-    // Simulasi pengiriman
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Link reset password terkirim ke email Anda (Simulasi)'),
-        backgroundColor: Colors.green,
-      ),
+    _showCustomSnackBar(
+      context,
+      'Reset link sent! Please check your inbox.',
+      isError: false,
     );
 
-    // Kode ini aman dari 'use_build_context_synchronously'
-    // karena tidak ada 'await' sebelumnya.
-    context.pop();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) context.pop();
+    });
   }
 
-  // --- build() Method (Struktur sama persis dengan Login) ---
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.mark_email_read_outlined,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isError
+            ? Colors.redAccent.withValues(alpha: 0.9)
+            : Colors.green.withValues(alpha: 0.9),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.creamyWhite,
-      body: Stack(
-        children: [
-          // 1. Widget Latar Belakang (Reusable)
-          const AuthBackground(),
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.creamyWhite,
+        resizeToAvoidBottomInset: true,
+        body: Stack(
+          children: [
+            const AuthBackground(),
 
-          // 2. Widget Konten Form
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, safeConstraints) {
-                final double viewportHeight = safeConstraints.maxHeight;
-                final double screenWidth = safeConstraints.maxWidth;
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, safeConstraints) {
+                  final double viewportHeight = safeConstraints.maxHeight;
+                  final double screenWidth = safeConstraints.maxWidth;
 
-                const double baseWidth = 375.0;
-                final double scaleFactor = (screenWidth / baseWidth).clamp(
-                  0.85,
-                  1.15,
-                );
+                  const double baseWidth = 375.0;
+                  final double scaleFactor = (screenWidth / baseWidth).clamp(
+                    0.85,
+                    1.15,
+                  );
 
-                return SingleChildScrollView(
-                  child: Container(
-                    constraints: BoxConstraints(minHeight: viewportHeight),
-                    padding: EdgeInsets.symmetric(horizontal: 24 * scaleFactor),
+                  return SizedBox(
+                    height: viewportHeight,
+                    width: screenWidth,
                     child: Center(
-                      // Konten di-center secara vertikal
-                      child: ForgotPasswordFormContent(
-                        scaleFactor: scaleFactor,
-                        screenHeight: viewportHeight,
-                        formKey: _formKey,
-                        emailController: _emailController,
-                        onSendLink: _performPasswordReset,
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).viewInsets.bottom,
+                        ),
+                        child: ForgotPasswordFormContent(
+                          scaleFactor: scaleFactor,
+                          screenHeight: viewportHeight,
+                          formKey: _formKey,
+                          emailController: _emailController,
+                          onSendLink: _performPasswordReset,
+                          isLoading: _isLoading,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

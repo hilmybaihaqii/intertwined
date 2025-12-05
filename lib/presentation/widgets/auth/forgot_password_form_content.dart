@@ -1,8 +1,8 @@
-// lib/presentation/widgets/auth/forgot_password_form_content.dart
+// lib/presentation/widgets/auth/forgot_password.dart
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intertwined/core/constants/app_colors.dart'; // Sesuaikan path
+import 'package:intertwined/core/constants/app_colors.dart';
 import './auth_text_field.dart';
 
 class ForgotPasswordFormContent extends StatelessWidget {
@@ -11,6 +11,7 @@ class ForgotPasswordFormContent extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController emailController;
   final VoidCallback onSendLink;
+  final bool isLoading;
 
   const ForgotPasswordFormContent({
     super.key,
@@ -19,86 +20,115 @@ class ForgotPasswordFormContent extends StatelessWidget {
     required this.formKey,
     required this.emailController,
     required this.onSendLink,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Ukuran yang konsisten
-    final double titleFontSize = 28.0 * scaleFactor;
-    final double subTitleFontSize = 15.0 * scaleFactor;
-    final double buttonHeight = 50.0 * scaleFactor;
-    final double generalTextSize = 14.0 * scaleFactor;
+    final double titleFontSize = 26.0 * scaleFactor;
+    final double subtitleFontSize = 14.0 * scaleFactor;
+    final double buttonHeight = 48.0 * scaleFactor;
+    final double generalTextSize = 13.5 * scaleFactor;
 
-    return Form(
-      key: formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          SizedBox(height: screenHeight * 0.1),
-          Text(
-            'Lost Your Password?',
-            style: TextStyle(
-              fontSize: titleFontSize,
-              fontWeight: FontWeight.w700,
-              color: AppColors.deepBrown,
-              height: 1.2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(height: screenHeight * 0.1),
+
+            Text(
+              'Forgot Password?',
+              style: TextStyle(
+                fontSize: titleFontSize,
+                fontWeight: FontWeight.w700,
+                color: AppColors.deepBrown,
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
-          SizedBox(height: screenHeight * 0.01),
-          Text(
-            'Enter your email to receive a password reset link.',
-            style: TextStyle(
-              fontSize: subTitleFontSize,
-              color: AppColors.deepBrown.withAlpha(200),
+            const SizedBox(height: 8),
+            Text(
+              'Don\'t worry! It happens. Please enter the email associated with your account.',
+              style: TextStyle(
+                fontSize: subtitleFontSize,
+                color: AppColors.deepBrown.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w500,
+                height: 1.5,
+              ),
             ),
-          ),
-          SizedBox(height: screenHeight * 0.04),
+            SizedBox(height: screenHeight * 0.05),
 
-          // Email Field
-          AuthTextField(
-            controller: emailController,
-            hintText: 'Email',
-            fontSize: generalTextSize,
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.isEmpty || !value.contains('@')) {
-                return 'Masukkan email yang valid.';
-              }
-              return null;
-            },
-          ),
-          SizedBox(height: screenHeight * 0.04),
+            AuthTextField(
+              controller: emailController,
+              hintText: 'Email Address',
+              fontSize: generalTextSize,
+              keyboardType: TextInputType.emailAddress,
+              prefixIcon: Icons.mark_email_unread_outlined,
+              validator: (value) {
+                if (value == null || value.isEmpty || !value.contains('@')) {
+                  return 'Please enter a valid email address';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: screenHeight * 0.05),
 
-          // Send Link Button
-          _buildSendLinkButton(buttonHeight, generalTextSize),
-          SizedBox(height: screenHeight * 0.02),
+            _buildSendLinkButton(buttonHeight, generalTextSize),
 
-          // Cancel Button
-          _buildCancelButton(context, generalTextSize),
-          SizedBox(height: screenHeight * 0.05),
-        ],
+            SizedBox(height: screenHeight * 0.02),
+
+            _buildCancelButton(context, generalTextSize),
+
+            SizedBox(height: screenHeight * 0.05),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSendLinkButton(double buttonHeight, double fontSize) {
-    return ElevatedButton(
-      onPressed: onSendLink,
-      style: ElevatedButton.styleFrom(
-        minimumSize: Size(double.infinity, buttonHeight),
-        backgroundColor: AppColors.deepBrown,
-        disabledBackgroundColor: AppColors.deepBrown.withAlpha(100),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        elevation: 3,
-        shadowColor: AppColors.deepBrown.withAlpha(102),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.deepBrown.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Text(
-        'Send Reset Link',
-        style: TextStyle(
-          fontSize: fontSize * 1.1,
-          color: AppColors.creamyWhite,
-          fontWeight: FontWeight.bold,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onSendLink,
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size(double.infinity, buttonHeight),
+          backgroundColor: AppColors.deepBrown,
+          disabledBackgroundColor: AppColors.deepBrown.withValues(alpha: 0.4),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
+        child: isLoading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: AppColors.creamyWhite,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Text(
+                'Send Reset Code',
+                style: TextStyle(
+                  fontSize: fontSize * 1.1,
+                  color: AppColors.creamyWhite,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
       ),
     );
   }
@@ -107,15 +137,21 @@ class ForgotPasswordFormContent extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: TextButton(
-        onPressed: () => context.pop(), // Langsung pop
-        child: Text(
-          'Cancel',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.deepBrown.withAlpha(150),
-            fontSize: fontSize,
-            fontWeight: FontWeight.bold,
-          ),
+        onPressed: () => context.pop(),
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.deepBrown.withValues(alpha: 0.5),
+          splashFactory: NoSplash.splashFactory,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.arrow_back_rounded, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'Back to Login',
+              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
       ),
     );

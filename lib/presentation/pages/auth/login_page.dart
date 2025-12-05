@@ -5,12 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Import BLoC dan State Anda
 import '../../bloc/auth/auth_cubit.dart';
 import '../../bloc/auth/auth_state.dart';
 import '../../../core/constants/app_colors.dart';
 
-// Import widget yang baru kita buat
 import '../../widgets/auth/auth_background.dart';
 import '../../widgets/auth/login_form_content.dart';
 
@@ -22,7 +20,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // --- State dan Logic (Tidak Berubah) ---
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -35,8 +32,10 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+
   void _performLogin() {
-    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+
     if (_formKey.currentState!.validate()) {
       context.read<AuthCubit>().login(
         _emailController.text.trim(),
@@ -46,14 +45,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _performGoogleLogin() {
-    FocusScope.of(context).unfocus();
-    // context.read<AuthCubit>().loginWithGoogle();
-    print("Login with Google pressed!"); // Placeholder
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Login dengan Google belum diimplementasikan!'),
-        backgroundColor: Colors.blueAccent,
-      ),
+    FocusManager.instance.primaryFocus?.unfocus();
+    // Placeholder logic
+    _showCustomSnackBar(
+      context,
+      'Fitur Login Google segera hadir!',
+      isError: false,
     );
   }
 
@@ -63,92 +60,139 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  void _handleAuthStatus(BuildContext context, AuthState state) async {
+  void _handleAuthStatus(BuildContext blocContext, AuthState state) async {
     if (state is AuthSuccess) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      final prefs = await SharedPreferences.getInstance();
+      ScaffoldMessenger.of(blocContext).hideCurrentSnackBar();
 
+      final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
 
       final bool isProfileSetupComplete =
           prefs.getBool('profile_completed') ?? false;
-
       if (isProfileSetupComplete) {
         context.go('/dashboard');
       } else {
         context.go('/profile-setup');
       }
     } else if (state is AuthFailure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login Gagal: ${state.message}'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _showCustomSnackBar(blocContext, state.message, isError: true);
     }
   }
 
-  // --- build() Method (DIREVISI) ---
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.info_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isError
+            ? Colors.redAccent.withValues(alpha: 0.9)
+            : Colors.blueAccent,
+        behavior: SnackBarBehavior.floating, // Melayang (tidak nempel bawah)
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.creamyWhite, // Pastikan warna bg sesuai
-      body: BlocListener<AuthCubit, AuthState>(
-        listener: _handleAuthStatus,
-        child: Stack(
-          children: [
-            // 1. Widget Latar Belakang (Tetap)
-            const AuthBackground(),
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.creamyWhite,
+        resizeToAvoidBottomInset:
+            true,
+        body: BlocListener<AuthCubit, AuthState>(
+          listener: _handleAuthStatus,
+          child: Stack(
+            children: [
+              const AuthBackground(),
 
-            // 2. Widget Konten Form (Direvisi untuk centering)
-            SafeArea(
-              child: LayoutBuilder(
-                // LayoutBuilder di dalam SafeArea untuk mendapatkan tinggi viewport yang benar
-                builder: (context, safeConstraints) {
-                  final double viewportHeight = safeConstraints.maxHeight;
-                  final double screenWidth = safeConstraints.maxWidth;
+              SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double screenHeight = constraints.maxHeight;
+                    final double screenWidth = constraints.maxWidth;
 
-                  const double baseWidth = 375.0;
-                  final double scaleFactor = (screenWidth / baseWidth).clamp(
-                    0.85,
-                    1.15,
-                  );
+                    const double baseWidth = 375.0;
+                    final double scaleFactor = (screenWidth / baseWidth).clamp(
+                      0.85,
+                      1.15,
+                    );
 
-                  return SingleChildScrollView(
-                    child: Container(
-                      // Paksa container untuk setidaknya setinggi viewport
-                      constraints: BoxConstraints(minHeight: viewportHeight),
-                      // Pindahkan padding ke sini
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24 * scaleFactor,
-                      ),
-                      // Gunakan Center untuk memposisikan konten di tengah
+                    return SizedBox(
+                      height: screenHeight,
+                      width: screenWidth,
                       child: Center(
-                        child: BlocBuilder<AuthCubit, AuthState>(
-                          builder: (context, state) {
-                            // Kirim screenHeight asli untuk referensi spasi
-                            return LoginFormContent(
+                        child: SingleChildScrollView(
+                          physics: const ClampingScrollPhysics(),
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: LoginFormContent(
                               scaleFactor: scaleFactor,
-                              screenHeight: viewportHeight,
+                              screenHeight: screenHeight,
                               formKey: _formKey,
                               emailController: _emailController,
                               passwordController: _passwordController,
-                              isLoading: state is AuthLoading,
+                              isLoading: false,
                               isPasswordHidden: _isPasswordHidden,
                               onLogin: _performLogin,
                               onGoogleLogin: _performGoogleLogin,
                               onTogglePasswordVisibility:
                                   _togglePasswordVisibility,
-                            );
-                          },
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  );
+                    );
+                  },
+                ),
+              ),
+
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  if (state is AuthLoading) {
+                    return Container(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const CircularProgressIndicator(
+                            color: AppColors.deepBrown,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
                 },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

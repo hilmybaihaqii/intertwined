@@ -12,6 +12,7 @@ class AuthTextField extends StatelessWidget {
   final VoidCallback? onToggleVisibility;
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
+  final IconData? prefixIcon;
 
   const AuthTextField({
     super.key,
@@ -23,75 +24,101 @@ class AuthTextField extends StatelessWidget {
     this.onToggleVisibility,
     this.validator,
     this.keyboardType = TextInputType.text,
+    this.prefixIcon,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Style untuk border
-    final defaultBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+    final borderRadius = BorderRadius.circular(16);
+
+    final outlineBorder = OutlineInputBorder(
+      borderRadius: borderRadius,
       borderSide: BorderSide(
-        color: AppColors.deepBrown.withAlpha(100),
-        width: 1.5,
+        color: AppColors.deepBrown.withValues(alpha: 0.1),
+        width: 1.0,
       ),
     );
 
     final focusedBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(
-        color: AppColors.deepBrown,
-        width: 2.0,
-      ),
+      borderRadius: borderRadius,
+      borderSide: const BorderSide(color: AppColors.deepBrown, width: 1.5),
     );
 
     final errorBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: borderRadius,
       borderSide: BorderSide(
-        color: Colors.redAccent.withAlpha(179),
-        width: 1.5,
+        color: Colors.redAccent.withValues(alpha: 0.8),
+        width: 1.0,
       ),
     );
 
-    return Material(
-      elevation: 1.5,
-      shadowColor: AppColors.deepBrown.withAlpha(50),
-      borderRadius: BorderRadius.circular(12),
-      color: AppColors.creamyWhite,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: borderRadius,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.deepBrown.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword && isPasswordHidden,
-        style: TextStyle(fontSize: fontSize, color: AppColors.deepBrown),
+        keyboardType: keyboardType,
+        style: TextStyle(
+          fontSize: fontSize,
+          color: AppColors.deepBrown,
+          fontWeight: FontWeight.w500,
+        ),
+        cursorColor: AppColors.deepBrown,
         decoration: InputDecoration(
+          filled: true,
+          fillColor: AppColors.lightGrey,
           hintText: hintText,
           hintStyle: TextStyle(
-            color: AppColors.deepBrown.withAlpha(128),
+            // GANTI: withOpacity -> withValues
+            color: AppColors.deepBrown.withValues(alpha: 0.4),
             fontSize: fontSize,
           ),
-          filled: true,
-          fillColor: AppColors.creamyWhite,
-          suffixIcon: isPassword
-              ? IconButton(
-                  icon: Icon(
-                    isPasswordHidden
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: AppColors.deepBrown.withAlpha(179),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 18.0,
+            horizontal: 20.0,
+          ),
+          prefixIcon: prefixIcon != null
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 10),
+                  child: Icon(
+                    prefixIcon,
+                    color: AppColors.deepBrown.withValues(alpha: 0.6),
+                    size: 22,
                   ),
-                  onPressed: onToggleVisibility,
                 )
               : null,
-          border: defaultBorder,
-          enabledBorder: defaultBorder,
+          suffixIcon: isPassword
+              ? Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: IconButton(
+                    icon: Icon(
+                      isPasswordHidden
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppColors.deepBrown.withValues(alpha: 0.5),
+                      size: 22,
+                    ),
+                    onPressed: onToggleVisibility,
+                  ),
+                )
+              : null,
+          border: outlineBorder,
+          enabledBorder: outlineBorder,
           focusedBorder: focusedBorder,
           errorBorder: errorBorder,
           focusedErrorBorder: errorBorder,
-          // --- PERUBAHAN DI SINI ---
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 16.0,
-            horizontal: 20.0,
-          ),
         ),
-        keyboardType: keyboardType,
         validator: validator,
       ),
     );

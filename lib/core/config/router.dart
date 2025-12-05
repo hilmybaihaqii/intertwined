@@ -1,8 +1,7 @@
-// lib/core/config/router.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// Asumsikan kita akan membuat halaman-halaman ini
+
+// Import semua halaman
 import '../../presentation/pages/onboarding/splash_page.dart';
 import '../../presentation/pages/onboarding/onboarding_page.dart';
 import '../../presentation/pages/choice_page.dart';
@@ -10,25 +9,24 @@ import '../../presentation/pages/auth/login_page.dart';
 import '../../presentation/pages/auth/register_page.dart';
 import '../../presentation/pages/auth/forgot_password_page.dart';
 import '../../presentation/pages/main/dashboard_page.dart';
-import '../../presentation/pages/onboarding/profile_setup_page.dart';
+import '../../presentation/pages/setup/profile_setup_page.dart';
+import '../../presentation/pages/main/message/message_page.dart';
+import '../../presentation/pages/main/message/chat_detail_page.dart';
 
+import '../../core/models/match_model.dart';
 
 final GoRouter router = GoRouter(
-  // Tentukan rute awal aplikasi (yaitu Splash Screen)
-  initialLocation: '/', 
-  
-  // Daftar semua rute yang ada di aplikasi Anda
+  initialLocation: '/',
   routes: <RouteBase>[
-    // Rute utama (Splash Screen)
+    // Splash
     GoRoute(
       path: '/',
       builder: (BuildContext context, GoRouterState state) {
         return const SplashPage();
       },
-      // Child routes tidak diperlukan untuk Splash, karena ia langsung navigasi
     ),
-    
-    // Rute Onboarding/Perkenalan
+
+    // Onboarding
     GoRoute(
       path: '/onboarding',
       name: 'onboarding',
@@ -36,8 +34,8 @@ final GoRouter router = GoRouter(
         return const OnboardingPage();
       },
     ),
-    
-    // Rute Pemilihan Login/Register
+
+    // Choice (Login/Register)
     GoRoute(
       path: '/choice',
       name: 'choice',
@@ -45,8 +43,8 @@ final GoRouter router = GoRouter(
         return const ChoicePage();
       },
     ),
-    
-    // Rute Login
+
+    // Auth Routes
     GoRoute(
       path: '/login',
       name: 'login',
@@ -54,8 +52,6 @@ final GoRouter router = GoRouter(
         return const LoginPage();
       },
     ),
-    
-    // Rute Register
     GoRoute(
       path: '/register',
       name: 'register',
@@ -63,8 +59,15 @@ final GoRouter router = GoRouter(
         return const RegisterPage();
       },
     ),
+    GoRoute(
+      path: '/forgot-password',
+      name: 'forgot_password',
+      builder: (BuildContext context, GoRouterState state) {
+        return const ForgotPasswordPage();
+      },
+    ),
 
-    // Rute Pengisian Profil Awal
+    // Setup Profile
     GoRoute(
       path: '/profile-setup',
       name: 'profile_setup',
@@ -73,20 +76,29 @@ final GoRouter router = GoRouter(
       },
     ),
 
-    GoRoute(
-      path: '/forgot-password',
-      name: 'forgot_password',
-      builder: (BuildContext context, GoRouterState state) {
-        return const ForgotPasswordPage(); // Halaman baru yang akan kita buat
-      },
-    ),
-    
-    // Rute Dashboard Utama
+    // Main Dashboard
     GoRoute(
       path: '/dashboard',
       name: 'dashboard',
       builder: (BuildContext context, GoRouterState state) {
         return const DashboardPage();
+      },
+    ),
+
+    // Message Page (Baru)
+    GoRoute(
+      path: '/message',
+      name: 'message', // Kasih nama biar rapi
+      builder: (context, state) => const MessagePage(),
+    ),
+
+    GoRoute(
+      path: '/chat-detail',
+      name: 'chat_detail',
+      builder: (context, state) {
+        // Mengambil data user yang dikirim via extra
+        final user = state.extra as MatchUser;
+        return ChatDetailPage(user: user);
       },
     ),
   ],
